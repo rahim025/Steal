@@ -9,7 +9,8 @@ reconnaissance vocale embarquée (Vosk).
 
 - Reconnaissance vocale continue et 100% offline (moteur Vosk)
 - Ouverture d'applications par la voix
-- Envoi de message WhatsApp par la voix (profil UI documenté, exemple de référence)
+- Envoi de message par la voix sur **WhatsApp, Messenger, Instagram, TikTok et Facebook**, avec un enchaînement fiable des étapes (chaque clic attend que l'écran suivant soit réellement chargé, via `waitForScreenChange`, au lieu d'enchaîner en rafale)
+- **Appels réels** : résolution du nom prononcé en numéro de téléphone via le carnet de contacts (`ContactResolver`), puis déclenchement de l'appel
 - Actions système : volume, retour, accueil, notifications
 - Actions génériques sur l'écran affiché : clic sur un élément par son texte, lecture de l'écran à voix haute
 - Tentative de déverrouillage vocal (voir limites ci-dessous)
@@ -56,8 +57,13 @@ personnelle. Steal simule des clics/saisies dans leur interface via le
 service d'accessibilité Android — la même technique que Tasker ou
 MacroDroid. Conséquence : **chaque mise à jour de ces apps peut casser
 l'automatisation** (changement des identifiants internes de l'interface).
-Le fichier `WhatsAppProfile.kt` explique comment les retrouver avec l'outil
-`uiautomatorviewer`.
+Le fichier `MessagingAppProfile.kt` explique comment les retrouver avec
+l'outil `uiautomatorviewer`. **Seul le profil WhatsApp a été documenté avec
+un peu plus de certitude ; les profils Messenger, Instagram, TikTok et
+Facebook sont des points de départ plausibles à vérifier et corriger avant
+usage réel.** Pour Facebook en particulier, la conversation peut rediriger
+vers l'app Messenger séparée selon la version installée — dans ce cas,
+utiliser directement la commande avec "messenger" plutôt que "facebook".
 
 ### Publication sur le Play Store
 Google est strict sur les apps utilisant l'accessibilité à ces fins ; une
@@ -69,23 +75,27 @@ accessibilité). Pour un usage personnel via `.apk` installé manuellement
 
 ```
 app/src/main/java/com/steal/voiceassistant/
-├── ui/                          Écrans (MainActivity, SettingsActivity)
+├── ui/                          Écrans (MainActivity, SettingsActivity, EnrollPassphraseActivity)
 ├── service/
-│   ├── VoiceRecognitionService  Écoute vocale continue (Vosk)
-│   └── UnlockAccessibilityService  Actions UI + tentative de déverrouillage
+│   ├── VoiceRecognitionService       Écoute vocale continue (Vosk)
+│   ├── UnlockAccessibilityService    Actions UI, enchaînement fiable, tentative de déverrouillage
+│   └── LockScreenPassphraseListener  Vérification de la phrase de déverrouillage
+├── voiceprint/
+│   ├── FeatureExtractor         Extraction d'empreinte vocale (comparaison de similarité)
+│   └── VoicePassphraseManager   Enrôlement et vérification de la phrase de déverrouillage
 └── model/
     ├── CommandParser            Texte reconnu → commande structurée
     ├── CommandRouter            Commande → exécution concrète
-    └── WhatsAppProfile          Identifiants UI WhatsApp
+    ├── MessagingAppProfile      Identifiants UI des 4 apps de messagerie supportées
+    └── ContactResolver          Résolution nom → numéro de téléphone (pour les appels)
 ```
 
 ## Prochaines étapes suggérées
 
-- Ajouter les profils Messenger, Instagram, Facebook, TikTok (même méthode que WhatsApp)
-- Gérer l'enchaînement fiable des étapes UI (attendre le chargement de chaque écran au lieu d'exécuter les clics en rafale)
-- Résolution des contacts par nom (READ_CONTACTS) pour les appels
+- Vérifier et corriger les resource-id de Messenger, Instagram et TikTok avec `uiautomatorviewer` (voir `MessagingAppProfile.kt`)
 - Contrôle de la lampe torche (CameraManager) et du WiFi
 - Mot-clé de réveil dédié (ex: "Steal, ...") pour éviter les déclenchements accidentels
+- Gérer le cas où un contact a plusieurs numéros (choisir ou demander lequel)
 
 ## Licence
 
